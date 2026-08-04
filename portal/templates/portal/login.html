@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title>Login - Portal de Consultoria</title>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: flex-end; /* Joga o conteúdo para a direita */
+            align-items: center;
+            min-height: 100vh;
+            padding-right: 15vw; /* Afasta da borda direita da tela exatamente como na sua marcação */
+            /* Novo degradê em tons de azul corporativo e profundo */
+            background: linear-gradient(135deg, #0a192f 0%, #102a45 50%, #1e3a8a 100%);
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* O Efeito de Vidro Fosco (Glassmorphism) com toque azulado */
+        .glass-container {
+            position: relative;
+            width: 380px;
+            padding: 50px 40px;
+            background: rgba(255, 255, 255, 0.04); /* Transparência sutil */
+            border-radius: 24px;
+            backdrop-filter: blur(15px); /* Desfoque do fundo */
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15); /* Borda refinada */
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 35px;
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar svg {
+            width: 45px;
+            height: 45px;
+            fill: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-group {
+            position: relative;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .input-group svg {
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 20px;
+            height: 20px;
+            fill: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Inputs com borda inferior limpa */
+        .input-group input {
+            width: 100%;
+            padding: 10px 10px 10px 35px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            outline: none;
+            color: #fff;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            transition: 0.3s;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .input-group input:focus {
+            border-bottom: 1px solid #60a5fa; /* Azul claro ao focar */
+        }
+
+        .options {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .options label {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .options label input {
+            margin-right: 8px;
+            accent-color: #3b82f6;
+        }
+
+        .options a {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .options a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        /* Botão com degradê azul tecnológico */
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(29, 78, 216, 0.4);
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(90deg, #1e40af, #2563eb);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(29, 78, 216, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-container">
+        <!-- Avatar Icon -->
+        <div class="avatar">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+        
+        <form method="post" autocomplete="off" style="width: 100%;">
+            {% csrf_token %}
+            <!-- Usuário Input -->
+            <div class="input-group">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <input type="text" name="username" placeholder="Usuário" required>
+            </div>
+            
+            <!-- Senha Input -->
+            <div class="input-group">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                <input type="password" name="password" placeholder="Senha" required>
+            </div>
+            
+            <div class="options">
+                <label><input type="checkbox"> Lembrar-me</label>
+                <a href="#">Esqueceu a senha?</a>
+            </div>
+            
+            <button type="submit" class="login-btn">ENTRAR</button>
+        </form>
+    </div>
+</body>
+</html>

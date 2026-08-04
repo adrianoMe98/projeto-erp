@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <title>{% block title %}Portal do Cliente{% endblock %}</title>
+    <!-- Tabler CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler-vendors.min.css" rel="stylesheet"/>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        :root { 
+            --tblr-font-sans-serif: 'Inter', sans-serif; 
+            --tblr-primary: #3b82f6; 
+        }
+
+        /* Fundo claro para a área de dados (Leitura Limpa) */
+        body {
+            background-color: #f4f6f9 !important;
+            min-height: 100vh;
+            color: #334155 !important;
+        }
+
+        /* ==========================================
+           MENU LATERAL - ESTILO IXC (BLOCO)
+           ========================================== */
+        .navbar-vertical {
+            background-color: #1d252b !important;
+            border-right: 1px solid #151b20 !important;
+            width: 260px !important;
+        }
+
+        .navbar-vertical .navbar-brand {
+            background-color: #151b20 !important;
+            border-bottom: 1px solid #2b363f !important;
+            margin: 0 !important;
+            padding: 20px 20px !important;
+            justify-content: flex-start;
+        }
+
+        .navbar-vertical .nav-item .nav-link {
+            border-radius: 0 !important;
+            color: #b0bec5 !important;
+            padding: 14px 20px !important;
+            border-left: 4px solid transparent !important;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .navbar-vertical .nav-item .nav-link:hover {
+            background-color: #263238 !important;
+            color: #ffffff !important;
+        }
+
+        /* Menu Ativo (A assinatura do IXC) */
+        .navbar-vertical .nav-item .nav-link.active {
+            background-color: #263238 !important;
+            color: #ffffff !important;
+            border-left: 4px solid #4bcffa !important; 
+        }
+
+        .navbar-vertical .nav-link-icon {
+            margin-right: 12px !important;
+            color: inherit !important;
+        }
+
+        .navbar-vertical .navbar-footer {
+            padding: 20px;
+            background-color: #151b20;
+            border-top: 1px solid #2b363f;
+            margin-top: auto;
+        }
+
+        /* Padronização dos Cartões Brancos */
+        .card {
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            background: #ffffff;
+        }
+        .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- MENU LATERAL -->
+        <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark d-print-none">
+            <div class="container-fluid p-0 d-flex flex-column h-100">
+                <button class="navbar-toggler ms-3 my-2" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <h1 class="navbar-brand navbar-brand-autodark w-100">
+                    <a href="{% url 'dashboard' %}" class="text-decoration-none text-white d-flex align-items-center w-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-server me-2 text-blue" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="3" y="4" width="18" height="8" rx="3" /><rect x="3" y="12" width="18" height="8" rx="3" /><line x1="7" y1="8" x2="7" y2="8.01" /><line x1="7" y1="16" x2="7" y2="16.01" /></svg>
+                        Portal Cliente
+                    </a>
+                </h1>
+                
+                <div class="collapse navbar-collapse w-100 flex-grow-1" id="sidebar-menu">
+                    <ul class="navbar-nav pt-lg-3 w-100" role="tablist">
+                        
+                        <!-- Bloco onde a Dashboard vai injetar as abas do menu -->
+                        {% block sidebar_menu %}{% endblock %}
+
+                        <!-- Botão de Ação (Sempre Visível) -->
+                        <li class="nav-item mt-3">
+                            <a class="nav-link text-primary" href="{% url 'novo_ticket' %}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                </span>
+                                <span class="nav-link-title fw-bold">Abrir Novo Chamado</span>
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <div class="navbar-footer w-100 mt-auto">
+                        <div class="text-muted mb-2" style="font-size: 0.8rem; text-transform: uppercase;">Logado como</div>
+                        <div class="text-white fw-bold mb-3 text-truncate">{{ cliente.nome_fantasia|default:"Cliente" }}</div>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100 btn-sm">Sair do Sistema</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <div class="page-wrapper">
+            <div class="page-body m-0 p-4">
+                <div class="container-fluid">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+</body>
+</html>

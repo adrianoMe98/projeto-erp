@@ -1,0 +1,342 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Dashboard - {{ cliente.nome_fantasia }}{% endblock %}
+
+<!-- INJETA AS ABAS NO MENU LATERAL -->
+{% block sidebar_menu %}
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active" href="#tab-visao" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg></span>
+            <span class="nav-link-title">Visão Geral</span>
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-chamados" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 3v4a1 1 0 0 0 1 1h4" /><path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z" /><path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2" /></svg></span>
+            <span class="nav-link-title">Chamados</span>
+        </a>
+    </li>
+    
+    <!-- Divisor Visual no Menu -->
+    <li class="nav-item mt-3 mb-1"><span class="text-muted ms-3" style="font-size: 0.75rem; text-transform: uppercase;">Infraestrutura</span></li>
+    
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-equip" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="3" y="4" width="18" height="8" rx="3" /><rect x="3" y="12" width="18" height="8" rx="3" /><line x1="7" y1="8" x2="7" y2="8.01" /><line x1="7" y1="16" x2="7" y2="16.01" /></svg></span>
+            <span class="nav-link-title">Equipamentos</span>
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-vlan" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9a3 3 0 1 0 0 -6a3 3 0 0 0 0 6z" /><path d="M6 21a3 3 0 1 0 0 -6a3 3 0 0 0 0 6z" /><path d="M18 15a3 3 0 1 0 0 -6a3 3 0 0 0 0 6z" /><line x1="6" y1="9" x2="6" y2="15" /><line x1="8.5" y1="7.5" x2="15.5" y2="10.5" /><line x1="8.5" y1="16.5" x2="15.5" y2="13.5" /></svg></span>
+            <span class="nav-link-title">Redes e VLANs</span>
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-ip" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 12l-8 8l-8 -8l8 -8l8 8z" /></svg></span>
+            <span class="nav-link-title">Blocos IP (IPAM)</span>
+        </a>
+    </li>
+    <li class="nav-item mt-3 mb-1"><span class="text-muted ms-3" style="font-size: 0.75rem; text-transform: uppercase;">Administrativo</span></li>
+    
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-financeiro" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0v-13a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1v12a3 3 0 0 0 3 3h11" /><path d="M8 8l4 0" /><path d="M8 12l4 0" /><path d="M8 16l4 0" /></svg></span>
+            <span class="nav-link-title">Financeiro & Contratos</span>
+        </a>
+    </li>
+{% endblock %}
+
+
+{% block content %}
+{% if cliente %}
+<div class="tab-content">
+    <!-- ABA 6: FINANCEIRO E CONTRATOS -->
+    <div class="tab-pane" id="tab-financeiro" role="tabpanel">
+        
+        <div class="row row-cards mb-4">
+            <!-- Card Resumo Financeiro -->
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header"><h3 class="card-title">Resumo Financeiro</h3></div>
+                    <div class="card-body">
+                        {% if financeiro %}
+                            <div class="mb-3">
+                                <div class="text-muted">Mensalidade Contratada</div>
+                                <div class="h2 text-primary">R$ {{ financeiro.valor_mensalidade }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted">Vencimento Padrão</div>
+                                <div class="h3">Dia {{ financeiro.dia_vencimento }}</div>
+                            </div>
+                            <div>
+                                <div class="text-muted">Forma de Pagamento</div>
+                                <div class="h3">{{ financeiro.get_forma_pagamento_display }}</div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Perfil financeiro não configurado.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Contrato Ativo & Minuta -->
+            <div class="col-md-8">
+                <div class="card h-100">
+                    <div class="card-header"><h3 class="card-title">Contratos de Prestação de Serviços</h3></div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter table-striped mb-0">
+                                <thead><tr><th>Tipo de Consultoria</th><th>Início</th><th>Renovação</th><th>Documento</th></tr></thead>
+                                <tbody>
+                                    {% for contrato in contratos %}
+                                    <tr>
+                                        <td><strong class="text-dark">{{ contrato.get_tipo_display }}</strong></td>
+                                        <td>{{ contrato.data_inicio|date:"d/m/Y" }}</td>
+                                        <td><span class="badge bg-yellow text-dark">{{ contrato.data_vencimento|date:"d/m/Y" }}</span></td>
+                                        <td>
+                                            {% if contrato.arquivo_pdf %}
+                                                <a href="{{ contrato.arquivo_pdf.url }}" target="_blank" class="btn btn-sm btn-success">Baixar PDF Assinado</a>
+                                            {% else %}
+                                                <!-- Botão que abre a Minuta Gerada Automaticamente -->
+                                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modal-contrato-{{ contrato.id }}">Ler Minuta</button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Modal da Minuta Automática -->
+                                    <div class="modal modal-blur fade" id="modal-contrato-{{ contrato.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+                                        <div class="modal-content">
+                                          <div class="modal-header">
+                                            <h5 class="modal-title">Minuta de Contrato - {{ contrato.get_tipo_display }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                          </div>
+                                          <div class="modal-body" style="font-family: serif; text-align: justify; line-height: 1.6;">
+                                                <h4 class="text-center fw-bold mb-4">CONTRATO DE PRESTAÇÃO DE SERVIÇOS TÉCNICOS</h4>
+                                                
+                                                <!-- A MÁGICA ACONTECE AQUI. O '|safe' e '|linebreaks' aplicam a formatação HTML -->
+                                                {{ contrato.texto_renderizado|safe|linebreaks }}
+                                                
+                                                <div class="mt-5 d-flex justify-content-between">
+                                                    <div class="text-center w-50">_______________________________<br>{{ cliente.nome_fantasia|upper }}<br>CONTRATANTE</div>
+                                                    <div class="text-center w-50">_______________________________<br>CONSULTORIA TÉCNICA<br>CONTRATADA</div>
+                                                </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {% empty %}
+                                    <tr><td colspan="4" class="text-center text-muted py-4">Nenhum contrato ativo.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Histórico de Pagamentos -->
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Histórico de Pagamentos</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped mb-0">
+                    <thead><tr><th>Referência</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Pagamento</th></tr></thead>
+                    <tbody>
+                        {% for pag in pagamentos %}
+                        <tr>
+                            <td><strong>{{ pag.referencia }}</strong></td>
+                            <td>{{ pag.data_vencimento|date:"d/m/Y" }}</td>
+                            <td>R$ {{ pag.valor }}</td>
+                            <td>
+                                {% if pag.status == 'P' %}<span class="badge bg-green text-white">Pago</span>
+                                {% elif pag.status == 'A' %}<span class="badge bg-yellow text-dark">Pendente</span>
+                                {% else %}<span class="badge bg-red text-white">Atrasado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ pag.data_pagamento|date:"d/m/Y"|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Nenhum registro financeiro encontrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- ABA 1: VISÃO GERAL (Cards) -->
+    <div class="tab-pane active show" id="tab-visao" role="tabpanel">
+        <h2 class="page-title mb-4">Visão Geral da Consultoria</h2>
+        <div class="row row-deck mb-4">
+            <div class="col-sm-6 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader text-secondary">Franquia Mensal Contratada</div>
+                        <div class="h1 mb-0 text-blue">{{ cliente.franquia_horas }}h</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader text-secondary">Saldo Restante no Mês</div>
+                        <div class="h1 mb-0 text-green">{{ cliente.saldo_horas }}h</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 2: CHAMADOS -->
+    <div class="tab-pane" id="tab-chamados" role="tabpanel">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">Lista de Chamados</h3>
+                <a href="{% url 'novo_ticket' %}" class="btn btn-primary btn-sm">+ Novo Chamado</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th>Título</th>
+                            <th>Status</th>
+                            <th>Abertura</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                        <tr>
+                            <td class="text-muted">#{{ ticket.id }}</td>
+                            <td class="fw-bold text-dark">{{ ticket.titulo }}</td>
+                            <td>
+                                {% if ticket.status == 'A' %}<span class="badge bg-blue text-white">Aberto</span>
+                                {% elif ticket.status == 'E' %}<span class="badge bg-yellow text-dark">Em Andamento</span>
+                                {% elif ticket.status == 'G' %}<span class="badge bg-secondary text-white">Aguard. Cliente</span>
+                                {% elif ticket.status == 'C' %}<span class="badge bg-green text-white">Concluído</span>
+                                {% elif ticket.status == 'X' %}<span class="badge bg-red text-white">Cancelado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ ticket.data_abertura|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Nenhum chamado registrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 3: EQUIPAMENTOS -->
+    <div class="tab-pane" id="tab-equip" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Equipamentos Cadastrados</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped mb-0">
+                    <thead><tr><th>Nome</th><th>Tipo</th><th>IP Gerência</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for eq in equipamentos %}
+                        <tr>
+                            <td><strong class="text-dark">{{ eq.nome }}</strong></td>
+                            <td>{{ eq.get_tipo_display }}</td>
+                            <td><code>{{ eq.ip_gerencia|default:"-" }}</code></td>
+                            <td>{% if eq.ativo %}<span class="badge bg-green">Ativo</span>{% else %}<span class="badge bg-secondary">Inativo</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Nenhum equipamento.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 4: VLANS -->
+    <div class="tab-pane" id="tab-vlan" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Redes e VLANs</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped mb-0">
+                    <thead><tr><th>VLAN ID</th><th>Nome</th><th>Origem</th></tr></thead>
+                    <tbody>
+                        {% for v in vlans %}
+                        <tr>
+                            <td><span class="badge bg-dark">{{ v.vlan_id }}</span></td>
+                            <td><strong class="text-dark">{{ v.nome }}</strong></td>
+                            <td class="text-muted">{{ v.equipamento_origem.nome|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-4">Nenhuma VLAN.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+   <!-- ABA 5: BLOCOS IP (ÁRVORE HIERÁRQUICA) -->
+    <div class="tab-pane" id="tab-ip" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Gerenciamento de IPs (Hierarquia)</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter table-hover card-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 20px;">Prefixo de Rede</th>
+                            <th>Descrição / Utilização</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for raiz in blocos_ip_raizes %}
+                        <!-- 1º NÍVEL: REDE RAIZ -->
+                        <tr style="background-color: #f8fafc;">
+                            <td style="padding-left: 20px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" /></svg>
+                                <strong class="text-dark">{{ raiz.prefixo }}</strong>
+                            </td>
+                            <td class="text-muted">{{ raiz.descricao|default:"Rede Principal (Root)" }}</td>
+                        </tr>
+                            
+                            <!-- 2º NÍVEL: FILHOS (ex: /24) -->
+                            {% for filho in raiz.subrede_set.all %}
+                            <tr>
+                                <td style="padding-left: 50px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 6v6a3 3 0 0 0 3 3h10l-4 -4m0 8l4 -4" /></svg>
+                                    <code>{{ filho.prefixo }}</code>
+                                </td>
+                                <td class="text-muted">{{ filho.descricao|default:"-" }}</td>
+                            </tr>
+                                
+                                <!-- 3º NÍVEL: NETOS (ex: /29, /30) -->
+                                {% for neto in filho.subrede_set.all %}
+                                <tr>
+                                    <td style="padding-left: 90px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 6v6a3 3 0 0 0 3 3h10l-4 -4m0 8l4 -4" /></svg>
+                                        <code class="text-secondary">{{ neto.prefixo }}</code>
+                                    </td>
+                                    <td class="text-muted" style="font-size: 0.9em;">{{ neto.descricao|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+
+                            {% endfor %}
+
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">Nenhuma subrede raiz cadastrada.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% else %}
+<div class="alert alert-warning">Seu usuário não está vinculado a nenhuma empresa.</div>
+{% endif %}
+{% endblock %}

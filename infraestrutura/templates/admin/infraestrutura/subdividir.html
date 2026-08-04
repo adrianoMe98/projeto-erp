@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h3 class="card-title">Ferramenta IPAM: Fatiar Subrede</h3>
+    </div>
+    
+    <div class="card-body">
+        <h4 class="text-primary mb-4">Rede Origem: <strong>{{ obj.prefixo }}</strong> ({{ obj.cliente.nome_fantasia }})</h4>
+        
+        <p>Esta rede é <strong>IPv{{ rede_atual.version }}</strong> e possui a máscara atual <strong>/{{ rede_atual.prefixlen }}</strong>.</p>
+        <p class="text-muted">Ao fatiar esta rede, o sistema criará sub-blocos menores automaticamente e os vinculará a esta rede pai.</p>
+        
+        <hr>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group mt-3">
+                <label for="novo_prefixo" style="font-weight: bold; font-size: 1.1rem;">Escolha a nova máscara (Prefixo de destino):</label>
+                <select name="novo_prefixo" id="novo_prefixo" class="form-control mt-2" style="max-width: 300px;" required>
+                    <option value="">Selecione o corte...</option>
+                    {% for p in prefixos_validos %}
+                        <option value="{{ p }}">/{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success"><i class="fas fa-cut"></i> Fatiar e Gerar Redes</button>
+                <a href="{% url 'admin:infraestrutura_subrede_changelist' %}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

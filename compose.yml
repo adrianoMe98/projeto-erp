@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: erp_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=erp_db
+      - POSTGRES_USER=erp_admin
+      - POSTGRES_PASSWORD=senha_segura_aqui
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: erp_web
+    # O comando será executado após criarmos o projeto no Passo 2
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=erp_db
+      - DB_USER=erp_admin
+      - DB_PASSWORD=senha_segura_aqui
+      - DB_HOST=db
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

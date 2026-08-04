@@ -1,0 +1,15 @@
+# Banco de dados
+db.sqlite3
+
+# Uploads
+media/
+
+# Ambientes Virtuais e Cache
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

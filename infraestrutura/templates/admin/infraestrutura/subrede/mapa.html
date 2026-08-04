@@ -1,0 +1,92 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* O container que organiza os quadradinhos lado a lado */
+    .ip-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+        gap: 8px;
+        margin-top: 20px;
+    }
+    
+    /* Estilo de cada quadradinho de IP */
+    .ip-box {
+        border-radius: 4px;
+        padding: 8px 4px;
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .ip-box:hover {
+        transform: scale(1.1);
+        z-index: 10;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    /* O final do IP (.1, .254) que aparece dentro do quadrado */
+    .ip-final { font-size: 1rem; display: block; margin-bottom: 2px; }
+
+    /* As Cores Mágicas */
+    .bg-verde { background-color: #2fb344; }   /* Livre */
+    .bg-vermelho { background-color: #d63939; } /* Em Uso */
+    .bg-amarelo { background-color: #f59f00; color: #000; } /* Reservado */
+    .bg-preto { background-color: #1d252b; }    /* Rede / Broadcast */
+
+    /* Legenda */
+    .legenda {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    .legenda-item { display: flex; align-items: center; font-size: 0.9rem; }
+    .legenda-cor { width: 16px; height: 16px; border-radius: 3px; margin-right: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title">Mapa de Utilização de IPs</h3>
+        <a href="{% url 'admin:infraestrutura_subrede_changelist' %}" class="btn btn-secondary btn-sm">Voltar para Redes</a>
+    </div>
+    
+    <div class="card-body">
+        <h4 class="text-primary mb-2">Rede: <strong>{{ obj.prefixo }}</strong></h4>
+        <p class="text-muted">Total de Endereços: <strong>{{ total_ips }}</strong> | Cliente: {{ obj.cliente.nome_fantasia }}</p>
+        
+        <!-- Legenda de Cores -->
+        <div class="legenda">
+            <div class="legenda-item"><div class="legenda-cor bg-verde"></div> Livre</div>
+            <div class="legenda-item"><div class="legenda-cor bg-vermelho"></div> Em Uso</div>
+            <div class="legenda-item"><div class="legenda-cor bg-amarelo"></div> Reservado</div>
+            <div class="legenda-item"><div class="legenda-cor bg-preto"></div> Rede/Broadcast</div>
+        </div>
+
+        <hr>
+
+        <!-- O Grid Mágico -->
+        <div class="ip-grid">
+            {% for item in grid_ips %}
+                <!-- title="" gera a caixinha nativa do navegador ao passar o mouse -->
+                <div class="ip-box bg-{{ item.cor }}" title="IP: {{ item.ip }}&#10;Status: {{ item.desc }}">
+                    <!-- Usa um filtro mágico para mostrar só o último octeto (ex: 254) -->
+                    <span class="ip-final">{{ item.ip|slice:"-3:"|cut:"." }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

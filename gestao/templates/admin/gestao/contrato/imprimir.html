@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrato - {{ cliente.nome_fantasia }}</title>
+    <style>
+        /* Define o formato da página para A4 */
+        @page { 
+            size: A4; 
+            margin: 2.5cm 2cm; 
+        }
+        body {
+            font-family: "Times New Roman", Times, serif;
+            line-height: 1.6;
+            color: #000;
+            background: #e2e8f0; /* Fundo cinza na tela do PC */
+            margin: 0;
+            padding: 20px;
+        }
+        /* O "Papel" em si */
+        .folha-a4 {
+            width: 100%;
+            max-width: 21cm;
+            min-height: 29.7cm;
+            margin: 0 auto;
+            padding: 2.5cm 2cm;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            text-align: justify;
+        }
+        /* Oculta os botões na hora que gerar o PDF */
+        @media print {
+            body { background: #fff; padding: 0; }
+            .folha-a4 { box-shadow: none; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+        }
+        /* Botão flutuante para impressão */
+        .btn-print {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #0d6efd;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .btn-print:hover { background-color: #0b5ed7; }
+    </style>
+</head>
+<!-- O onload dispara a janela de salvar como PDF automaticamente -->
+<body onload="window.print()">
+
+    <div class="no-print">
+        <a href="#" onclick="window.print(); return false;" class="btn-print">🖨️ Salvar como PDF</a>
+    </div>
+
+    <div class="folha-a4">
+        {{ contrato.texto_renderizado|safe|linebreaks }}
+    </div>
+
+</body>
+</html>

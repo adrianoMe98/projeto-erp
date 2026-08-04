@@ -1,0 +1,34 @@
+/* ==========================================
+   CSS CUSTOMIZADO DO ADMIN - ESTILO NETBOX
+   ========================================== */
+
+/* 1. Limita o tamanho APENAS do cartão de conteúdo, colando tudo na esquerda */
+.content .card {
+    max-width: 1200px;
+    /* Isso impede o formulário de esticar ao infinito em monitores ultrawide */
+}
+
+/* 2. Expande os campos de input e dropdowns (Tira o visual engessado) */
+.form-group input[type="text"], 
+.form-group input[type="number"], 
+.form-group input[type="url"], 
+.form-group select,
+.select2-container,
+.select2-container--default .select2-selection--single {
+    width: 100% !important;
+    max-width: 600px; /* Mantém um limite elegante para os campos */
+    border-radius: 4px;
+}
+
+/* 3. Ajuste de altura e padding para os campos de texto nativos */
+.form-group input.vTextField,
+.form-group input.vURLField,
+.form-group input.vIntegerField {
+    height: 38px;
+    padding: 6px 12px;
+}
+
+/* 4. Dá um respiro na coluna de Botões Laterais (Salvar/Excluir) */
+.col-12.col-lg-3 {
+    padding-left: 2rem;
+}
