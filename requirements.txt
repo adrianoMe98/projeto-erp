@@ -1,3 +1,1 @@
-Django>=5.0
-psycopg2-binary>=2.9
-django-jazzmin
+-r requirements.lock

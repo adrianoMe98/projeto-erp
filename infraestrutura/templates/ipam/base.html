@@ -1,0 +1,56 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}IPAM{% endblock %} · ERP</title>
+    <script>
+        (function () {
+            const saved = localStorage.getItem("erp-theme");
+            const theme = saved === "dark" || saved === "light" ? saved : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.setAttribute("data-bs-theme", theme);
+        })();
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet">
+    <link href="{% static 'css/portal_theme.css' %}" rel="stylesheet">
+    <link href="{% static 'infraestrutura/ipam.css' %}" rel="stylesheet">
+</head>
+<body>
+<div class="ipam-shell">
+    <aside class="ipam-sidebar d-flex flex-column">
+        <a class="brand" href="{% url 'ipam:dashboard' %}">◫ ERP IPAM</a>
+        <nav class="nav flex-column py-3">
+            <a class="nav-link" href="{% url 'ipam:dashboard' %}">Visão geral e sub-redes</a>
+            <a class="nav-link" href="{% url 'ipam:subnet_create' %}">Adicionar sub-rede</a>
+            <a class="nav-link" href="{% url 'admin:infraestrutura_secaoipam_changelist' %}">Seções IPAM</a>
+            <a class="nav-link" href="{% url 'admin:infraestrutura_vrf_changelist' %}">VRFs</a>
+            <a class="nav-link" href="{% url 'admin:infraestrutura_vlan_changelist' %}">VLANs</a>
+        </nav>
+        <div class="mt-auto p-3 border-top border-secondary">
+            <div class="small text-secondary mb-2">{{ request.user.get_username }} · v{{ erp_version }}</div>
+            <a class="btn btn-outline-light btn-sm w-100 mb-2" href="{% url 'admin:index' %}">Painel administrativo</a>
+            <button class="btn btn-outline-light btn-sm w-100 theme-toggle" type="button" data-theme-toggle>
+                <span data-theme-icon>☾</span><span data-theme-label>Tema escuro</span>
+            </button>
+        </div>
+    </aside>
+    <main class="ipam-main">
+        <header class="ipam-topbar">
+            <div>
+                <strong>Gerenciamento de endereços IP</strong>
+                <span class="badge bg-purple-lt ms-2">{{ erp_environment }}</span>
+            </div>
+            <a class="btn btn-primary btn-sm" href="{% url 'ipam:subnet_create' %}">+ Nova sub-rede</a>
+        </header>
+        <div class="ipam-content">
+            {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+<script src="{% static 'js/theme.js' %}"></script>
+</body>
+</html>

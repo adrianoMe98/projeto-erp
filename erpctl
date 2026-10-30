@@ -1,0 +1,495 @@
+#!/bin/sh
+set -eu
+umask 077
+
+APP_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$APP_ROOT"
+
+ENVIRONMENT=""
+ENV_FILE=""
+ENV_EXAMPLE=""
+ERP_COMPOSE_FILE=""
+
+usage() {
+    cat <<'EOF'
+Uso:
+  ./erpctl install production [IP-ou-dominio]
+  ./erpctl install development [IP-ou-dominio]
+  ./erpctl update production|development PACOTE.tar.gz [SHA256]
+  ./erpctl deploy production|development
+  ./erpctl doctor production|development
+  ./erpctl db-password development
+  ./erpctl backup production|development
+  ./erpctl rollback production|development BACKUP-DE-CODIGO.tar.gz
+  ./erpctl status production|development
+  ./erpctl logs production|development
+  ./erpctl stop production|development
+  ./erpctl version
+EOF
+}
+
+select_environment() {
+    case "${1:-}" in
+        production|prod|producao|produção)
+            ENVIRONMENT="production"
+            ENV_FILE=".env"
+            ENV_EXAMPLE=".env.example"
+            ERP_COMPOSE_FILE="compose.yml"
+            ;;
+        development|dev|desenvolvimento)
+            ENVIRONMENT="development"
+            ENV_FILE=".env.dev"
+            ENV_EXAMPLE=".env.dev.example"
+            ERP_COMPOSE_FILE="compose.dev.yml"
+            ;;
+        *)
+            echo "Ambiente inválido: ${1:-não informado}." >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+}
+
+require_command() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "Comando obrigatório não encontrado: $1" >&2
+        exit 1
+    fi
+}
+
+require_docker() {
+    require_command docker
+    if ! docker compose version >/dev/null 2>&1; then
+        echo "Docker Compose v2 não está disponível." >&2
+        exit 1
+    fi
+}
+
+compose() (
+    # O arquivo selecionado controla o ambiente; exports do terminal não o substituem.
+    unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_ENV_FILES
+    unset DB_NAME DB_USER DB_PASSWORD DB_HOST DB_PORT
+    unset ERP_PORT ERP_ENVIRONMENT DJANGO_DEBUG DJANGO_SECRET_KEY
+    unset DJANGO_ALLOWED_HOSTS DJANGO_CSRF_TRUSTED_ORIGINS PIX_ENABLED
+    docker compose --env-file "$ENV_FILE" -f "$ERP_COMPOSE_FILE" "$@"
+)
+
+random_secret() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex 48
+    else
+        od -An -N48 -tx1 /dev/urandom | tr -d ' \n'
+    fi
+}
+
+env_value() {
+    awk -F= -v key="$2" '$1 == key {sub(/^[^=]*=/, ""); print; exit}' "$1"
+}
+
+set_env_value() {
+    file=$1
+    key=$2
+    value=$3
+    temporary_file=$(mktemp "${file}.XXXXXX")
+    awk -v key="$key" -v value="$value" '
+        BEGIN { found = 0 }
+        index($0, key "=") == 1 { print key "=" value; found = 1; next }
+        { print }
+        END { if (!found) print key "=" value }
+    ' "$file" > "$temporary_file"
+    mv "$temporary_file" "$file"
+}
+
+initialize_env() {
+    host=${1:-}
+    created=0
+
+    if [ ! -f "$ENV_FILE" ]; then
+        expected_project=$(env_value "$ENV_EXAMPLE" COMPOSE_PROJECT_NAME)
+        case "$ENVIRONMENT" in
+            development) expected_volume=postgres_dev_data ;;
+            production) expected_volume=postgres_data ;;
+        esac
+        existing_volumes=$(docker volume ls \
+            --filter "label=com.docker.compose.project=$expected_project" \
+            --filter "label=com.docker.compose.volume=$expected_volume" --quiet)
+        if [ -n "$existing_volumes" ]; then
+            echo "Arquivo $ENV_FILE ausente, mas o volume do banco já existe." >&2
+            echo "Restaure a configuração anterior antes de instalar; senhas novas não serão geradas." >&2
+            return 1
+        fi
+        cp "$ENV_EXAMPLE" "$ENV_FILE"
+        created=1
+    fi
+
+    if grep -Eq '^DJANGO_SECRET_KEY=(troque-|gerada-)' "$ENV_FILE"; then
+        set_env_value "$ENV_FILE" DJANGO_SECRET_KEY "$(random_secret)"
+    fi
+    if grep -Eq '^DB_PASSWORD=(troque-|gerada-)' "$ENV_FILE"; then
+        set_env_value "$ENV_FILE" DB_PASSWORD "$(random_secret)"
+    fi
+    if grep -Eq '^PIX_SIMULATOR_WEBHOOK_TOKEN=(troque-|gerado-)' "$ENV_FILE"; then
+        set_env_value "$ENV_FILE" PIX_SIMULATOR_WEBHOOK_TOKEN "$(random_secret)"
+    fi
+
+    if [ -z "$host" ]; then
+        host=$(hostname -I 2>/dev/null | awk '{print $1}')
+    fi
+    host=${host:-127.0.0.1}
+    port=$(env_value "$ENV_FILE" ERP_PORT)
+    port=${port:-8000}
+
+    if [ "$created" -eq 1 ]; then
+        set_env_value "$ENV_FILE" DJANGO_ALLOWED_HOSTS "$host,localhost,127.0.0.1"
+        set_env_value "$ENV_FILE" DJANGO_CSRF_TRUSTED_ORIGINS "http://$host:$port,http://localhost:$port"
+    fi
+
+    chmod 600 "$ENV_FILE"
+    echo "Configuração pronta: $ENV_FILE"
+}
+
+require_env() {
+    if [ ! -f "$ENV_FILE" ]; then
+        echo "Arquivo $ENV_FILE não encontrado. Execute: ./erpctl install $ENVIRONMENT" >&2
+        exit 1
+    fi
+}
+
+prepare_development_permissions() {
+    if [ "$ENVIRONMENT" = "development" ]; then
+        # O bind mount herda o modo da raiz no host, não o modo definido na imagem.
+        chmod a+rx "$APP_ROOT"
+    fi
+}
+
+doctor_environment() {
+    require_docker
+    require_env
+    compose run --rm --no-deps -T --entrypoint python web - "$ENVIRONMENT" <<'PY'
+import os
+import stat
+import sys
+
+expected_environment = sys.argv[1]
+errors = 0
+print(f"Diagnóstico do ambiente: {expected_environment}")
+print(f"Processo: uid={os.getuid()} gid={os.getgid()}")
+for path in ("/app", "/app/manage.py", "/app/core", "/app/var/static", "/app/var/media"):
+    try:
+        info = os.stat(path)
+        permission = os.R_OK | (os.X_OK if stat.S_ISDIR(info.st_mode) else 0)
+        readable = os.access(path, permission)
+        print(f"{path}: modo={stat.S_IMODE(info.st_mode):04o} acesso={'OK' if readable else 'FALHA'}")
+        if not readable:
+            errors += 1
+    except OSError:
+        print(f"{path}: indisponível ou sem permissão")
+        errors += 1
+
+actual_environment = os.getenv("ERP_ENVIRONMENT", "")
+if actual_environment != expected_environment:
+    print("FALHA: ERP_ENVIRONMENT não corresponde ao ambiente selecionado.")
+    errors += 1
+host = os.getenv("DB_HOST", "")
+if host != "db":
+    print("FALHA: o banco deve ser o serviço db do projeto Compose selecionado.")
+    sys.exit(1)
+
+try:
+    import psycopg2
+
+    connection = psycopg2.connect(
+        host=host,
+        port=os.getenv("DB_PORT", "5432"),
+        dbname=os.getenv("DB_NAME", "erp_db"),
+        user=os.getenv("DB_USER", "erp_admin"),
+        password=os.getenv("DB_PASSWORD", ""),
+        connect_timeout=5,
+    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    finally:
+        connection.close()
+    print("Banco: autenticação TCP e SELECT 1 aprovados.")
+except ImportError:
+    print("FALHA: driver PostgreSQL ausente na imagem.")
+    errors += 1
+except psycopg2.Error as exc:
+    if "password authentication failed" in str(exc):
+        print("FALHA: DB_PASSWORD não autentica o usuário do banco persistido.")
+        print("Confira o .env escolhido e use: ./erpctl db-password development (apenas no dev).")
+    else:
+        print("FALHA: não foi possível consultar o PostgreSQL. Confira os logs do serviço db.")
+    errors += 1
+
+print("Segredos não são exibidos por este diagnóstico.")
+sys.exit(1 if errors else 0)
+PY
+}
+
+change_development_database_password() {
+    if [ "$ENVIRONMENT" != "development" ]; then
+        echo "Este comando de recuperação atende somente ao desenvolvimento." >&2
+        return 1
+    fi
+    if [ ! -t 0 ]; then
+        echo "Execute em um terminal interativo para digitar a senha sem eco." >&2
+        return 1
+    fi
+    require_docker
+    require_env
+    compose up -d db
+    database_backup_file=$(database_backup)
+    echo "Backup criado: $database_backup_file"
+    echo "Digite duas vezes o valor de DB_PASSWORD configurado no .env.dev."
+    # Sem -h, psql usa o socket local; \password cifra a senha antes de enviá-la.
+    compose exec db sh -c '
+        unset PGPASSWORD PGHOST PGHOSTADDR PGSERVICE
+        exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\\password"
+    '
+    echo "Comando concluído. Valide com ./erpctl doctor development e depois ./erpctl deploy development."
+}
+
+wait_for_health() {
+    attempt=1
+    while [ "$attempt" -le 30 ]; do
+        if compose exec -T web python -c \
+            "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)" \
+            >/dev/null 2>&1; then
+            echo "Aplicação saudável."
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+
+    echo "A aplicação não passou no healthcheck." >&2
+    compose logs --tail=100 web >&2 || true
+    return 1
+}
+
+database_backup() {
+    timestamp=$(date +%Y%m%d-%H%M%S)-$$
+    backup_directory="$APP_ROOT/backups/$ENVIRONMENT"
+    backup_file="$backup_directory/database-$timestamp.sql"
+    temporary_file="$backup_file.tmp"
+    mkdir -p "$backup_directory"
+
+    if ! compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$temporary_file"; then
+        rm -f "$temporary_file"
+        echo "Não foi possível criar o backup do banco de dados." >&2
+        return 1
+    fi
+
+    mv "$temporary_file" "$backup_file"
+    echo "$backup_file"
+}
+
+source_backup() {
+    timestamp=$(date +%Y%m%d-%H%M%S)-$$
+    backup_directory="$APP_ROOT/backups/$ENVIRONMENT"
+    backup_file="$backup_directory/source-$timestamp.tar.gz"
+    mkdir -p "$backup_directory"
+    tar -czf "$backup_file" \
+        --exclude='./.git' \
+        --exclude='./.env' \
+        --exclude='./.env.dev' \
+        --exclude='./backups' \
+        --exclude='./db.sqlite3' \
+        --exclude='./var' \
+        --exclude='./tmp' \
+        --exclude='./.ruff_cache' \
+        --exclude='./*.tar.gz' \
+        --exclude='./*.zip' \
+        --exclude='__pycache__' \
+        --exclude='*.pyc' \
+        -C "$APP_ROOT" .
+    echo "$backup_file"
+}
+
+deploy() {
+    prepare_development_permissions || return 1
+    compose build --pull web || return 1
+    compose up -d || return 1
+    wait_for_health || return 1
+    compose ps
+}
+
+install_environment() {
+    host=${1:-}
+    require_docker
+    initialize_env "$host" || return 1
+    deploy
+    echo
+    echo "Instalação $ENVIRONMENT concluída."
+    echo "Crie o primeiro administrador com:"
+    echo "  ./erpctl status $ENVIRONMENT"
+    echo "  docker compose --env-file $ENV_FILE -f $ERP_COMPOSE_FILE exec web python manage.py createsuperuser"
+}
+
+backup_environment() {
+    require_docker
+    require_env
+    backup_file=$(database_backup)
+    echo "Backup criado: $backup_file"
+}
+
+validate_archive() {
+    archive=$1
+    if [ ! -f "$archive" ]; then
+        echo "Pacote não encontrado: $archive" >&2
+        exit 1
+    fi
+    if tar -tzf "$archive" | awk '/(^\/|(^|\/)\.\.($|\/))/ { invalid = 1 } END { exit !invalid }'; then
+        echo "O pacote contém caminhos inseguros." >&2
+        exit 1
+    fi
+}
+
+update_environment() {
+    archive=$1
+    expected_sha=${2:-}
+    require_docker
+    require_env
+    require_command tar
+    validate_archive "$archive"
+
+    if [ -n "$expected_sha" ]; then
+        require_command sha256sum
+        actual_sha=$(sha256sum "$archive" | awk '{print $1}')
+        if [ "$actual_sha" != "$expected_sha" ]; then
+            echo "SHA-256 inválido. Atualização cancelada." >&2
+            exit 1
+        fi
+    fi
+
+    database_backup_file=$(database_backup)
+    source_backup_file=$(source_backup)
+    prepare_development_permissions
+    stage_directory=$(mktemp -d)
+    trap 'rm -rf "$stage_directory"' EXIT HUP INT TERM
+    tar -xzf "$archive" -C "$stage_directory"
+
+    payload_root="$stage_directory"
+    if [ ! -f "$payload_root/manage.py" ]; then
+        manage_file=$(find "$stage_directory" -mindepth 2 -maxdepth 2 -type f -name manage.py | head -n 1)
+        if [ -z "$manage_file" ]; then
+            echo "O pacote não contém uma aplicação ERP válida." >&2
+            exit 1
+        fi
+        payload_root=$(dirname "$manage_file")
+    fi
+    if [ ! -f "$payload_root/manage.py" ] || [ ! -f "$payload_root/compose.yml" ]; then
+        echo "O pacote não contém uma aplicação ERP válida." >&2
+        exit 1
+    fi
+
+    (
+        cd "$payload_root"
+        tar -cf - \
+            --exclude='./.git' \
+            --exclude='./.env' \
+            --exclude='./.env.dev' \
+            --exclude='./backups' \
+            --exclude='./db.sqlite3' \
+            --exclude='./var' \
+            --exclude='./tmp' \
+            --exclude='./.ruff_cache' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' .
+    ) | (
+        cd "$APP_ROOT"
+        tar -xf -
+    )
+
+    prepare_development_permissions
+
+    if ! deploy; then
+        echo "Falha na atualização. Restaurando a versão anterior do código..." >&2
+        tar -xzf "$source_backup_file" -C "$APP_ROOT"
+        deploy || true
+        echo "Código anterior restaurado. O backup do banco está em: $database_backup_file" >&2
+        exit 1
+    fi
+
+    echo "Atualização $ENVIRONMENT concluída para a versão $(cat VERSION)."
+    echo "Backup do banco: $database_backup_file"
+    echo "Backup do código: $source_backup_file"
+}
+
+rollback_environment() {
+    source_archive=$1
+    require_docker
+    require_env
+    validate_archive "$source_archive"
+    database_backup_file=$(database_backup)
+    tar -xzf "$source_archive" -C "$APP_ROOT"
+    deploy
+    echo "Código restaurado. Backup preventivo do banco: $database_backup_file"
+    echo "Migrações de banco não são revertidas automaticamente."
+}
+
+command=${1:-}
+case "$command" in
+    install)
+        select_environment "${2:-}"
+        install_environment "${3:-}"
+        ;;
+    update)
+        select_environment "${2:-}"
+        [ "$#" -ge 3 ] || { usage >&2; exit 2; }
+        update_environment "$3" "${4:-}"
+        ;;
+    deploy)
+        select_environment "${2:-}"
+        require_docker
+        require_env
+        database_backup_file=$(database_backup)
+        deploy
+        echo "Deploy concluído. Backup do banco: $database_backup_file"
+        ;;
+    doctor)
+        select_environment "${2:-}"
+        doctor_environment
+        ;;
+    db-password)
+        select_environment "${2:-}"
+        change_development_database_password
+        ;;
+    backup)
+        select_environment "${2:-}"
+        backup_environment
+        ;;
+    rollback)
+        select_environment "${2:-}"
+        [ "$#" -ge 3 ] || { usage >&2; exit 2; }
+        rollback_environment "$3"
+        ;;
+    status)
+        select_environment "${2:-}"
+        require_docker
+        require_env
+        compose ps
+        ;;
+    logs)
+        select_environment "${2:-}"
+        require_docker
+        require_env
+        compose logs --tail=200 -f web
+        ;;
+    stop)
+        select_environment "${2:-}"
+        require_docker
+        require_env
+        compose down
+        ;;
+    version)
+        cat VERSION
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac

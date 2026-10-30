@@ -38,6 +38,12 @@
             <span class="nav-link-title">Blocos IP (IPAM)</span>
         </a>
     </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-cgnat" data-bs-toggle="tab" role="tab">
+            <span class="nav-link-icon"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M7 7h11l-3 -3m3 3l-3 3"/><path d="M17 17h-11l3 3m-3 -3l3 -3"/></svg></span>
+            <span class="nav-link-title">Relatórios CGNAT</span>
+        </a>
+    </li>
     <li class="nav-item mt-3 mb-1"><span class="text-muted ms-3" style="font-size: 0.75rem; text-transform: uppercase;">Administrativo</span></li>
     
     <li class="nav-item" role="presentation">
@@ -92,48 +98,46 @@
                                 <tbody>
                                     {% for contrato in contratos %}
                                     <tr>
-                                        <td><strong class="text-dark">{{ contrato.get_tipo_display }}</strong></td>
+                                        <td><strong class="text-dark">{{ contrato.modelo.nome|default:"Sem modelo" }}</strong></td>
                                         <td>{{ contrato.data_inicio|date:"d/m/Y" }}</td>
                                         <td><span class="badge bg-yellow text-dark">{{ contrato.data_vencimento|date:"d/m/Y" }}</span></td>
                                         <td>
                                             {% if contrato.arquivo_pdf %}
-                                                <a href="{{ contrato.arquivo_pdf.url }}" target="_blank" class="btn btn-sm btn-success">Baixar PDF Assinado</a>
+                                                <a href="{% url 'contrato_download' contrato.id %}" class="btn btn-sm btn-success">Baixar PDF Assinado</a>
                                             {% else %}
                                                 <!-- Botão que abre a Minuta Gerada Automaticamente -->
                                                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modal-contrato-{{ contrato.id }}">Ler Minuta</button>
                                             {% endif %}
                                         </td>
                                     </tr>
-                                    
-                                    <!-- Modal da Minuta Automática -->
-                                    <div class="modal modal-blur fade" id="modal-contrato-{{ contrato.id }}" tabindex="-1" role="dialog" aria-hidden="true">
-                                      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-                                        <div class="modal-content">
-                                          <div class="modal-header">
-                                            <h5 class="modal-title">Minuta de Contrato - {{ contrato.get_tipo_display }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                          </div>
-                                          <div class="modal-body" style="font-family: serif; text-align: justify; line-height: 1.6;">
-                                                <h4 class="text-center fw-bold mb-4">CONTRATO DE PRESTAÇÃO DE SERVIÇOS TÉCNICOS</h4>
-                                                
-                                                <!-- A MÁGICA ACONTECE AQUI. O '|safe' e '|linebreaks' aplicam a formatação HTML -->
-                                                {{ contrato.texto_renderizado|safe|linebreaks }}
-                                                
-                                                <div class="mt-5 d-flex justify-content-between">
-                                                    <div class="text-center w-50">_______________________________<br>{{ cliente.nome_fantasia|upper }}<br>CONTRATANTE</div>
-                                                    <div class="text-center w-50">_______________________________<br>CONSULTORIA TÉCNICA<br>CONTRATADA</div>
-                                                </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
                                     {% empty %}
                                     <tr><td colspan="4" class="text-center text-muted py-4">Nenhum contrato ativo.</td></tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
+                        {% for contrato in contratos %}
+                            {% if not contrato.arquivo_pdf %}
+                            <div class="modal modal-blur fade" id="modal-contrato-{{ contrato.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Minuta de Contrato - {{ contrato.modelo.nome }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body" style="font-family: serif; text-align: justify; line-height: 1.6;">
+                                            <h4 class="text-center fw-bold mb-4">CONTRATO DE PRESTAÇÃO DE SERVIÇOS TÉCNICOS</h4>
+                                            {{ contrato.texto_renderizado|safe|linebreaks }}
+                                            <div class="mt-5 d-flex justify-content-between">
+                                                <div class="text-center w-50">_______________________________<br>{{ cliente.nome_fantasia|upper }}<br>CONTRATANTE</div>
+                                                <div class="text-center w-50">_______________________________<br>CONSULTORIA TÉCNICA<br>CONTRATADA</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -166,6 +170,30 @@
                 </table>
             </div>
         </div>
+
+        {% if pix_enabled %}
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title">Cobranças Pix</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table mb-0">
+                    <thead><tr><th>Descrição</th><th>Valor</th><th>Status</th><th>Validade</th><th></th></tr></thead>
+                    <tbody>
+                    {% for charge in pix_charges %}
+                        <tr>
+                            <td>{{ charge.descricao }}</td>
+                            <td>R$ {{ charge.valor }}</td>
+                            <td>{{ charge.get_status_display }}</td>
+                            <td>{{ charge.expires_at|date:"d/m/Y H:i" }}</td>
+                            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'pagamentos:detail' charge.id %}">Visualizar Pix</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Nenhuma cobrança Pix.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
 
     </div>
     
@@ -293,42 +321,40 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for raiz in blocos_ip_raizes %}
-                        <!-- 1º NÍVEL: REDE RAIZ -->
-                        <tr style="background-color: #f8fafc;">
-                            <td style="padding-left: 20px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" /></svg>
-                                <strong class="text-dark">{{ raiz.prefixo }}</strong>
+                        {% for row in subnet_rows %}
+                        <tr{% if row.depth == 0 %} class="subnet-root"{% endif %}>
+                            <td style="padding-left: {{ row.depth }}rem;">
+                                <a href="{% url 'ipam:portal_detail' row.subnet.id %}">{% if row.depth == 0 %}<strong>{{ row.subnet.prefixo }}</strong>{% else %}<code>{{ row.subnet.prefixo }}</code>{% endif %}</a>
                             </td>
-                            <td class="text-muted">{{ raiz.descricao|default:"Rede Principal (Root)" }}</td>
+                            <td class="text-muted">{{ row.subnet.descricao|default:"-" }}<div class="small">IPv{{ row.subnet.versao_ip }} · {{ row.subnet.get_status_display }} · {{ row.subnet.percentual_uso }}% utilizado</div></td>
                         </tr>
-                            
-                            <!-- 2º NÍVEL: FILHOS (ex: /24) -->
-                            {% for filho in raiz.subrede_set.all %}
-                            <tr>
-                                <td style="padding-left: 50px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 6v6a3 3 0 0 0 3 3h10l-4 -4m0 8l4 -4" /></svg>
-                                    <code>{{ filho.prefixo }}</code>
-                                </td>
-                                <td class="text-muted">{{ filho.descricao|default:"-" }}</td>
-                            </tr>
-                                
-                                <!-- 3º NÍVEL: NETOS (ex: /29, /30) -->
-                                {% for neto in filho.subrede_set.all %}
-                                <tr>
-                                    <td style="padding-left: 90px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 6v6a3 3 0 0 0 3 3h10l-4 -4m0 8l4 -4" /></svg>
-                                        <code class="text-secondary">{{ neto.prefixo }}</code>
-                                    </td>
-                                    <td class="text-muted" style="font-size: 0.9em;">{{ neto.descricao|default:"-" }}</td>
-                                </tr>
-                                {% endfor %}
-
-                            {% endfor %}
-
                         {% empty %}
                         <tr><td colspan="2" class="text-center text-muted py-4">Nenhuma subrede raiz cadastrada.</td></tr>
                         {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane" id="tab-cgnat" role="tabpanel">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Relatórios de alocação CGNAT</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table mb-0">
+                    <thead><tr><th>Plano</th><th>Plataforma</th><th>Assinantes</th><th>Data</th><th></th></tr></thead>
+                    <tbody>
+                    {% for generation in cgnat_reports %}
+                        <tr>
+                            <td>{{ generation.plan.nome }}</td>
+                            <td>{{ generation.get_target_display }}</td>
+                            <td>{{ generation.summary.assinantes }}</td>
+                            <td>{{ generation.created_at|date:"d/m/Y H:i" }}</td>
+                            <td><a class="btn btn-sm btn-primary" href="{% url 'cgnat:report' generation.id %}">Baixar relatório</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Nenhum relatório CGNAT disponível.</td></tr>
+                    {% endfor %}
                     </tbody>
                 </table>
             </div>
