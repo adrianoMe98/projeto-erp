@@ -1,0 +1,55 @@
+name: Qualidade
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: erp_test
+          POSTGRES_USER: erp_test
+          POSTGRES_PASSWORD: erp_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U erp_test -d erp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DJANGO_DEBUG: "0"
+      ERP_ENVIRONMENT: "production"
+      DJANGO_SECRET_KEY: "ci-only-long-random-looking-key-not-used-in-production-123456789"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
+      DJANGO_SECURE_SSL_REDIRECT: "1"
+      DJANGO_SECURE_COOKIES: "1"
+      DJANGO_SECURE_HSTS_SECONDS: "31536000"
+      DJANGO_SECURE_HSTS_PRELOAD: "1"
+      DB_NAME: erp_test
+      DB_USER: erp_test
+      DB_PASSWORD: erp_test_password
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      PIX_SIMULATOR_WEBHOOK_TOKEN: "ci-simulator-token"
+      PIX_ENABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+      - run: python -m unittest discover -s scripts/tests -v
+      - run: sh -n erpctl instalar.sh atualizar.sh docker/entrypoint.sh scripts/codex-setup.sh scripts/codex-check.sh
+      - run: python manage.py collectstatic --noinput
+      - run: python manage.py check --deploy

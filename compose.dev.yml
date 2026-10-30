@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    env_file: .env.dev
+    environment:
+      POSTGRES_DB: ${DB_NAME:-erp_dev_db}
+      POSTGRES_USER: ${DB_USER:-erp_dev_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env.dev}
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build: .
+    env_file: .env.dev
+    environment:
+      DB_HOST: db
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    ports:
+      - "${ERP_PORT:-8021}:8000"
+    volumes:
+      - .:/app
+      - media_dev_data:/app/var/media
+      - static_dev_data:/app/var/static
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+  media_dev_data:
+  static_dev_data:

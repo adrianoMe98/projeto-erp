@@ -1,0 +1,83 @@
+:root {
+    --ipam-sidebar: #111827;
+    --ipam-sidebar-border: #263244;
+    --ipam-accent: #22c55e;
+}
+
+.ipam-shell { min-height: 100vh; }
+.ipam-sidebar {
+    background: var(--ipam-sidebar);
+    border-right: 1px solid var(--ipam-sidebar-border);
+    color: #cbd5e1;
+    min-height: 100vh;
+    position: fixed;
+    width: 250px;
+    z-index: 20;
+}
+.ipam-sidebar .brand {
+    border-bottom: 1px solid var(--ipam-sidebar-border);
+    color: #fff;
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 1.35rem 1.25rem;
+    text-decoration: none;
+}
+.ipam-sidebar .nav-link {
+    border-left: 3px solid transparent;
+    color: #aab7c8;
+    margin: .2rem 0;
+    padding: .8rem 1.25rem;
+}
+.ipam-sidebar .nav-link:hover,
+.ipam-sidebar .nav-link.active {
+    background: #1f2937;
+    border-left-color: var(--ipam-accent);
+    color: #fff;
+}
+.ipam-main { margin-left: 250px; min-height: 100vh; }
+.ipam-topbar {
+    align-items: center;
+    background: var(--erp-surface);
+    border-bottom: 1px solid var(--erp-border);
+    display: flex;
+    justify-content: space-between;
+    min-height: 64px;
+    padding: .75rem 1.5rem;
+}
+.ipam-content { padding: 1.5rem; }
+.ipam-stat { border-left: 4px solid #3b82f6; }
+.ipam-stat.ipv4 { border-left-color: #22c55e; }
+.ipam-stat.ipv6 { border-left-color: #8b5cf6; }
+.ipam-stat.addresses { border-left-color: #f59e0b; }
+.prefix-cell { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+.tree-branch { color: var(--erp-text-muted); margin-right: .4rem; }
+.usage-track { background: var(--erp-surface-muted); border-radius: 20px; height: 8px; overflow: hidden; }
+.usage-bar { background: #22c55e; height: 100%; min-width: 2px; }
+.ipam-grid { display: grid; gap: 5px; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+.ip-cell {
+    border: 1px solid var(--erp-border);
+    border-left-width: 5px;
+    border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .72rem;
+    overflow: hidden;
+    padding: .45rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ip-cell.free { border-left-color: #22c55e; }
+.ip-cell.active { border-left-color: #ef4444; }
+.ip-cell.reserved { border-left-color: #f59e0b; }
+.ip-cell.disabled { border-left-color: #94a3b8; }
+.ip-cell.subnet { border-left-color: #3b82f6; background: color-mix(in srgb, #3b82f6 12%, var(--erp-surface)); }
+.ip-cell.special { border-left-color: #111827; opacity: .65; }
+.metadata-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.metadata-item { background: var(--erp-surface-muted); border-radius: 6px; padding: .75rem; }
+.metadata-item .label { color: var(--erp-text-muted); display: block; font-size: .72rem; text-transform: uppercase; }
+.form-errors { color: #dc2626; font-size: .82rem; margin-top: .25rem; }
+
+@media (max-width: 991px) {
+    .ipam-sidebar { min-height: auto; position: static; width: 100%; }
+    .ipam-main { margin-left: 0; }
+}
