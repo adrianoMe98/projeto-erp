@@ -1,0 +1,30 @@
+{% extends 'portal/base.html' %}
+{% block title %}Cobrança Pix - {{ charge.txid }}{% endblock %}
+{% block content %}
+<div class="page-header mb-3"><h2 class="page-title">Cobrança Pix</h2></div>
+<div class="alert alert-warning">
+    <strong>Ambiente simulado:</strong> este QR Code não realiza um pagamento real.
+</div>
+<div class="row row-cards">
+    <div class="col-md-5">
+        <div class="card"><div class="card-body text-center">
+            <img src="{% url 'pagamentos:qr' charge.id %}" alt="QR Code Pix simulado" style="width:280px;max-width:100%">
+            <h2 class="mt-3">R$ {{ charge.valor }}</h2>
+            <span class="badge {% if charge.status == 'paid' %}bg-green{% elif charge.status == 'pending' %}bg-yellow text-dark{% else %}bg-secondary{% endif %}">{{ charge.get_status_display }}</span>
+        </div></div>
+    </div>
+    <div class="col-md-7">
+        <div class="card"><div class="card-body">
+            <dl class="row">
+                <dt class="col-4">Descrição</dt><dd class="col-8">{{ charge.descricao }}</dd>
+                <dt class="col-4">TXID</dt><dd class="col-8"><code>{{ charge.txid }}</code></dd>
+                <dt class="col-4">Validade</dt><dd class="col-8">{{ charge.expires_at|date:'d/m/Y H:i' }}</dd>
+                <dt class="col-4">Confirmação</dt><dd class="col-8">{{ charge.paid_at|date:'d/m/Y H:i'|default:'-' }}</dd>
+            </dl>
+            <label class="form-label">Pix Copia e Cola de homologação</label>
+            <textarea class="form-control" rows="4" readonly>{{ charge.pix_copy_paste }}</textarea>
+            <a class="btn btn-link mt-3" href="{% url 'dashboard' %}">Voltar ao portal</a>
+        </div></div>
+    </div>
+</div>
+{% endblock %}

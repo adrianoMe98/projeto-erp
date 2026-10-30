@@ -3,12 +3,23 @@ db.sqlite3
 
 # Uploads
 media/
+var/
+backups/
+*.zip
 
 # Ambientes Virtuais e Cache
 __pycache__/
 *.pyc
 venv/
+.venv/
 .env
+.env.dev
+.coverage
+.pytest_cache/
+.ruff_cache/
+*.tar.gz
+*.tar.gz.sha256
+*.sql
 
 # Arquivos do sistema operacional
 .DS_Store

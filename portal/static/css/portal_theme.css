@@ -1,0 +1,126 @@
+:root,
+:root[data-theme="light"] {
+    color-scheme: light;
+    --erp-page-bg: #f4f6f9;
+    --erp-surface: #ffffff;
+    --erp-surface-muted: #f8fafc;
+    --erp-border: #e2e8f0;
+    --erp-text: #334155;
+    --erp-text-strong: #0f172a;
+    --erp-text-muted: #64748b;
+    --erp-input-bg: #ffffff;
+    --erp-input-border: #cbd5e1;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --erp-page-bg: #0f172a;
+    --erp-surface: #182235;
+    --erp-surface-muted: #111c2e;
+    --erp-border: #334155;
+    --erp-text: #dbe5f1;
+    --erp-text-strong: #f8fafc;
+    --erp-text-muted: #9aabc0;
+    --erp-input-bg: #111827;
+    --erp-input-border: #475569;
+}
+
+body,
+.page-wrapper {
+    background-color: var(--erp-page-bg) !important;
+    color: var(--erp-text) !important;
+}
+
+.card,
+.card-header,
+.card-footer,
+.modal-content {
+    background-color: var(--erp-surface) !important;
+    border-color: var(--erp-border) !important;
+    color: var(--erp-text) !important;
+}
+
+.card-header,
+.card-footer,
+.modal-header,
+.modal-footer,
+.table > :not(caption) > * > * {
+    border-color: var(--erp-border) !important;
+}
+
+.page-title,
+.card-title,
+.modal-title,
+.form-label,
+.text-dark,
+strong,
+dt,
+dd {
+    color: var(--erp-text-strong) !important;
+}
+
+.text-muted,
+.text-secondary,
+.subheader {
+    color: var(--erp-text-muted) !important;
+}
+
+.table {
+    --tblr-table-color: var(--erp-text);
+    --tblr-table-bg: transparent;
+    --tblr-table-striped-bg: var(--erp-surface-muted);
+    --tblr-table-hover-bg: var(--erp-surface-muted);
+    color: var(--erp-text) !important;
+}
+
+.subnet-root {
+    background-color: var(--erp-surface-muted) !important;
+}
+
+.form-control,
+.form-select,
+textarea,
+input {
+    background-color: var(--erp-input-bg) !important;
+    border-color: var(--erp-input-border) !important;
+    color: var(--erp-text-strong) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea:focus,
+input:focus {
+    background-color: var(--erp-input-bg) !important;
+    color: var(--erp-text-strong) !important;
+}
+
+.form-control::placeholder,
+textarea::placeholder,
+input::placeholder {
+    color: var(--erp-text-muted) !important;
+}
+
+code {
+    color: #7dd3fc;
+}
+
+.theme-toggle {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.theme-toggle__icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}

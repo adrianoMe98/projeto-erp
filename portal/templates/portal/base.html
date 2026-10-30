@@ -1,9 +1,20 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <title>{% block title %}Portal do Cliente{% endblock %}</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem("erp-theme");
+            const theme = savedTheme === "dark" || savedTheme === "light"
+                ? savedTheme
+                : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.setAttribute("data-bs-theme", theme);
+        })();
+    </script>
     <!-- Tabler CSS -->
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler-vendors.min.css" rel="stylesheet"/>
@@ -83,7 +94,9 @@
             background-color: #ffffff;
             border-bottom: 1px solid #e2e8f0;
         }
+        .logout-form { margin: 0; }
     </style>
+    <link href="{% static 'css/portal_theme.css' %}" rel="stylesheet"/>
 </head>
 <body>
     <div class="page">
@@ -121,7 +134,15 @@
                     <div class="navbar-footer w-100 mt-auto">
                         <div class="text-muted mb-2" style="font-size: 0.8rem; text-transform: uppercase;">Logado como</div>
                         <div class="text-white fw-bold mb-3 text-truncate">{{ cliente.nome_fantasia|default:"Cliente" }}</div>
-                        <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100 btn-sm">Sair do Sistema</a>
+                        <div class="text-muted small mb-3">v{{ erp_version }} · {{ erp_environment }}</div>
+                        <button type="button" class="btn btn-outline-light w-100 btn-sm mb-2 theme-toggle" data-theme-toggle>
+                            <span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☾</span>
+                            <span data-theme-label>Tema escuro</span>
+                        </button>
+                        <form method="post" action="{% url 'logout' %}" class="logout-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger w-100 btn-sm">Sair do Sistema</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -131,6 +152,14 @@
         <div class="page-wrapper">
             <div class="page-body m-0 p-4">
                 <div class="container-fluid">
+                    {% if erp_environment != "production" %}
+                        <div class="alert alert-info py-2" role="status">
+                            Ambiente de desenvolvimento · versão {{ erp_version }}
+                        </div>
+                    {% endif %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+                    {% endfor %}
                     {% block content %}{% endblock %}
                 </div>
             </div>
@@ -138,5 +167,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    <script src="{% static 'js/theme.js' %}"></script>
 </body>
 </html>

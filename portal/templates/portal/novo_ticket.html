@@ -18,11 +18,13 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label class="form-label required fw-bold">Título do Chamado</label>
-                    <input type="text" name="titulo" class="form-control" placeholder="Ex: Problema na OLT, Lentidão na VLAN 100" required>
+                    <input type="text" name="titulo" value="{{ form.titulo.value|default:'' }}" class="form-control{% if form.titulo.errors %} is-invalid{% endif %}" placeholder="Ex: Problema na OLT, Lentidão na VLAN 100" required>
+                    {% for error in form.titulo.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
                 </div>
                 <div class="mb-3">
                     <label class="form-label required fw-bold">Descrição Detalhada</label>
-                    <textarea name="descricao" class="form-control" rows="6" placeholder="Descreva o que está acontecendo com o máximo de detalhes..." required></textarea>
+                    <textarea name="descricao" class="form-control{% if form.descricao.errors %} is-invalid{% endif %}" rows="6" placeholder="Descreva o que está acontecendo com o máximo de detalhes..." required>{{ form.descricao.value|default:'' }}</textarea>
+                    {% for error in form.descricao.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
                 </div>
             </div>
             <div class="card-footer text-end bg-transparent">

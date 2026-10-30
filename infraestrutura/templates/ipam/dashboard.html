@@ -1,0 +1,49 @@
+{% extends "ipam/base.html" %}
+{% block title %}Visão geral{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div><h1 class="page-title mb-1">IPAM</h1><div class="text-muted">Árvore IPv4 e IPv6 por cliente, seção e VRF</div></div>
+</div>
+
+<div class="row row-cards mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="card ipam-stat"><div class="card-body"><div class="subheader">Sub-redes</div><div class="h1 mb-0">{{ stats.total }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card ipam-stat ipv4"><div class="card-body"><div class="subheader">IPv4</div><div class="h1 mb-0">{{ stats.ipv4 }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card ipam-stat ipv6"><div class="card-body"><div class="subheader">IPv6</div><div class="h1 mb-0">{{ stats.ipv6 }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card ipam-stat addresses"><div class="card-body"><div class="subheader">IPs registrados</div><div class="h1 mb-0">{{ stats.addresses }}</div></div></div></div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2">
+            <div class="col-lg-4"><input class="form-control" type="search" name="q" value="{{ filters.q }}" placeholder="Buscar prefixo, IP, hostname, VLAN, equipamento..."></div>
+            <div class="col-sm-6 col-lg-2"><select class="form-select" name="cliente"><option value="">Todos os clientes</option>{% for client in clients %}<option value="{{ client.id }}" {% if filters.cliente == client.id|stringformat:"s" %}selected{% endif %}>{{ client.nome_fantasia }}</option>{% endfor %}</select></div>
+            <div class="col-sm-6 col-lg-2"><select class="form-select" name="familia"><option value="">IPv4 e IPv6</option><option value="4" {% if filters.familia == "4" %}selected{% endif %}>IPv4</option><option value="6" {% if filters.familia == "6" %}selected{% endif %}>IPv6</option></select></div>
+            <div class="col-sm-6 col-lg-2"><select class="form-select" name="status"><option value="">Todos os status</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+            <div class="col-sm-6 col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-fill">Filtrar</button><a class="btn btn-outline-secondary" href="{% url 'ipam:dashboard' %}">Limpar</a></div>
+            <div class="col-sm-6 col-lg-3"><select class="form-select" name="secao"><option value="">Todas as seções</option>{% for section in sections %}<option value="{{ section.id }}" {% if filters.secao == section.id|stringformat:"s" %}selected{% endif %}>{{ section.cliente.nome_fantasia }} · {{ section.nome }}</option>{% endfor %}</select></div>
+            <div class="col-sm-6 col-lg-3"><select class="form-select" name="vrf"><option value="">Todas as VRFs</option><option value="default" {% if filters.vrf == "default" %}selected{% endif %}>Tabela padrão</option>{% for vrf in vrfs %}<option value="{{ vrf.id }}" {% if filters.vrf == vrf.id|stringformat:"s" %}selected{% endif %}>{{ vrf.cliente.nome_fantasia }} · {{ vrf.nome }}</option>{% endfor %}</select></div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-vcenter table-hover card-table">
+            <thead><tr><th>Prefixo</th><th>Descrição</th><th>Cliente / seção</th><th>VRF / VLAN</th><th>Estado</th><th style="min-width:150px">Utilização</th></tr></thead>
+            <tbody>
+            {% for row in page %}
+                <tr>
+                    <td class="prefix-cell" style="padding-left: {{ row.indent|add:16 }}px"><span class="tree-branch">{% if row.depth %}└{% else %}▣{% endif %}</span><a href="{% url 'ipam:subnet_detail' row.subnet.id %}">{{ row.subnet.prefixo }}</a> <span class="badge {% if row.subnet.versao_ip == 6 %}bg-purple-lt{% else %}bg-green-lt{% endif %}">v{{ row.subnet.versao_ip }}</span></td>
+                    <td>{{ row.subnet.descricao|default:"—" }}</td>
+                    <td><strong>{{ row.subnet.cliente.nome_fantasia }}</strong><div class="text-muted small">{{ row.subnet.secao.nome|default:"Sem seção" }}</div></td>
+                    <td>{{ row.subnet.vrf.nome|default:"default" }}<div class="text-muted small">{% if row.subnet.vlan %}VLAN {{ row.subnet.vlan.vlan_id }}{% else %}Sem VLAN{% endif %}</div></td>
+                    <td><span class="badge {% if row.subnet.status == 'A' %}bg-green-lt{% elif row.subnet.status == 'C' %}bg-blue-lt{% elif row.subnet.status == 'R' %}bg-yellow-lt{% else %}bg-secondary-lt{% endif %}">{{ row.subnet.get_status_display }}</span></td>
+                    <td><div class="d-flex justify-content-between small"><span>{{ row.subnet.percentual_uso }}%</span><span>{{ row.subnet.ips_em_uso }} IP(s)</span></div><div class="usage-track"><div class="usage-bar" style="width: {{ row.subnet.percentual_uso }}%"></div></div></td>
+                </tr>
+            {% empty %}<tr><td colspan="6" class="text-center text-muted py-5">Nenhuma sub-rede encontrada.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page.paginator.num_pages > 1 %}<div class="card-footer d-flex justify-content-between"><span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span><div class="btn-group">{% if page.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="?page={{ page.previous_page_number }}">Anterior</a>{% endif %}{% if page.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?page={{ page.next_page_number }}">Próxima</a>{% endif %}</div></div>{% endif %}
+</div>
+{% endblock %}

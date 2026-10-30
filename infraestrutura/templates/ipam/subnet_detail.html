@@ -1,0 +1,33 @@
+{% extends "ipam/base.html" %}
+{% block title %}{{ subnet.prefixo }}{% endblock %}
+{% block content %}
+<div class="mb-3"><a href="{% url 'ipam:dashboard' %}">IPAM</a>{% for item in breadcrumbs %} / {% if item.id == subnet.id %}<strong>{{ item.prefixo }}</strong>{% else %}<a href="{% url 'ipam:subnet_detail' item.id %}">{{ item.prefixo }}</a>{% endif %}{% endfor %}</div>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div><h1 class="page-title prefix-cell">{{ subnet.prefixo }}</h1><div class="text-muted">{{ subnet.descricao|default:"Sem descrição" }} · {{ subnet.cliente.nome_fantasia }}</div></div>
+    <div class="btn-list"><a class="btn btn-outline-secondary" href="{% url 'ipam:subnet_edit' subnet.id %}">Editar</a><a class="btn btn-outline-primary" href="{% url 'ipam:subnet_create' %}?parent={{ subnet.id }}">Nova filha</a><a class="btn btn-primary" href="{% url 'ipam:subnet_split' subnet.id %}">Subdividir / próximo bloco</a>{% if subnet.status != 'C' %}<a class="btn btn-success" href="{% url 'ipam:address_create' subnet.id %}">+ Endereço IP</a>{% endif %}</div>
+</div>
+<div class="row row-cards mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="card"><div class="card-body"><div class="subheader">Utilizáveis</div><div class="h2">{{ total_display }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card"><div class="card-body"><div class="subheader">Alocados</div><div class="h2 text-red">{{ allocated_display }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card"><div class="card-body"><div class="subheader">Livres</div><div class="h2 text-green">{{ free_display }}</div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card"><div class="card-body"><div class="subheader">Utilização</div><div class="h2">{{ subnet.percentual_uso }}%</div><div class="usage-track"><div class="usage-bar" style="width: {{ subnet.percentual_uso }}%"></div></div></div></div></div>
+</div>
+<div class="card mb-4"><div class="card-header"><h3 class="card-title">Detalhes da sub-rede</h3></div><div class="card-body"><div class="metadata-grid">
+    <div class="metadata-item"><span class="label">Família</span><strong>IPv{{ subnet.versao_ip }}</strong></div>
+    <div class="metadata-item"><span class="label">Estado</span><strong>{{ subnet.get_status_display }}</strong></div>
+    <div class="metadata-item"><span class="label">Seção</span><strong>{{ subnet.secao.nome|default:"Sem seção" }}</strong></div>
+    <div class="metadata-item"><span class="label">VRF</span><strong>{{ subnet.vrf.nome|default:"default" }}</strong></div>
+    <div class="metadata-item"><span class="label">Gateway</span><strong class="prefix-cell">{{ subnet.gateway|default:"—" }}</strong></div>
+    <div class="metadata-item"><span class="label">VLAN</span><strong>{% if subnet.vlan %}{{ subnet.vlan.vlan_id }} · {{ subnet.vlan.nome }}{% else %}—{% endif %}</strong></div>
+    <div class="metadata-item"><span class="label">Equipamento</span><strong>{{ subnet.equipamento.nome|default:"—" }}</strong></div>
+    <div class="metadata-item"><span class="label">Interface / local</span><strong>{{ subnet.interface|default:"—" }} · {{ subnet.localizacao|default:"—" }}</strong></div>
+</div></div></div>
+
+<div class="card mb-4"><div class="card-header d-flex justify-content-between"><h3 class="card-title">Sub-redes filhas</h3><a href="{% url 'ipam:subnet_create' %}?parent={{ subnet.id }}">Adicionar</a></div><div class="table-responsive"><table class="table table-vcenter card-table"><thead><tr><th>Prefixo</th><th>Descrição</th><th>Estado</th><th>Uso</th></tr></thead><tbody>{% for child in children %}<tr><td class="prefix-cell"><a href="{% url 'ipam:subnet_detail' child.id %}">{{ child.prefixo }}</a></td><td>{{ child.descricao|default:"—" }}</td><td>{{ child.get_status_display }}</td><td>{{ child.percentual_uso }}%</td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-4">Nenhuma sub-rede filha.</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="card mb-4"><div class="card-header d-flex justify-content-between"><h3 class="card-title">Endereços registrados</h3>{% if subnet.status != 'C' %}<a href="{% url 'ipam:address_create' subnet.id %}">Próximo IP livre</a>{% endif %}</div><div class="table-responsive"><table class="table table-vcenter card-table"><thead><tr><th>Endereço</th><th>Hostname / descrição</th><th>Status</th><th>MAC</th><th>Responsável</th><th></th></tr></thead><tbody>{% for address in address_page %}<tr><td class="prefix-cell">{{ address.endereco }}</td><td><strong>{{ address.hostname|default:"—" }}</strong><div class="text-muted small">{{ address.descricao|default:"" }}</div></td><td>{{ address.get_status_display }}</td><td class="prefix-cell">{{ address.mac_address|default:"—" }}</td><td>{{ address.responsavel|default:"—" }}</td><td><a class="btn btn-sm btn-outline-secondary" href="{% url 'ipam:address_edit' subnet.id address.id %}">Editar</a></td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhum endereço registrado diretamente nesta sub-rede.</td></tr>{% endfor %}</tbody></table></div></div>
+
+{% if visual_cells %}<div class="card mb-4"><div class="card-header"><h3 class="card-title">Mapa visual</h3></div><div class="card-body"><div class="d-flex flex-wrap gap-3 small mb-3"><span>🟩 Livre</span><span>🟥 Ativo</span><span>🟨 Reservado</span><span>🟦 Sub-rede filha</span><span>⬛ Especial</span></div><div class="ipam-grid">{% for cell in visual_cells %}<div class="ip-cell {{ cell.kind }}" title="{{ cell.address }} · {{ cell.label }}">{{ cell.address }}</div>{% endfor %}</div></div></div>{% else %}<div class="alert alert-info">O mapa visual só é exibido para blocos de até 1.024 endereços. Blocos IPv6 grandes são administrados por prefixos, sem enumeração.</div>{% endif %}
+
+{% if history %}<div class="card"><div class="card-header"><h3 class="card-title">Histórico recente</h3></div><div class="list-group list-group-flush">{% for event in history %}<div class="list-group-item"><strong>{{ event.get_acao_display }}</strong> · {{ event.resumo }}<div class="text-muted small">{{ event.criado_em|date:"d/m/Y H:i" }} · {{ event.usuario|default:"sistema" }}</div></div>{% endfor %}</div></div>{% endif %}
+{% endblock %}
