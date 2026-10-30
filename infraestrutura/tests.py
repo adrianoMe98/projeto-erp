@@ -148,6 +148,56 @@ class IPAMDomainTests(TestCase):
         )
         self.assertEqual(self.cliente.historico_ipam.count(), 1)
 
+    def test_low_ipv6_subdivision_preserves_address_family(self):
+        parent = Subrede.objects.create(cliente=self.cliente, prefixo="::/120", status="C")
+        self.assertEqual(free_subnets(parent, 124, 2), ["::/124", "::10/124"])
+        user = get_user_model().objects.create_user("noc-ipv6")
+        created = allocate_subnets(
+            parent=parent, new_prefix=124, quantity=2, description="IPv6", user=user
+        )
+        self.assertEqual([item.prefixo for item in created], ["::/124", "::10/124"])
+        self.assertEqual(next_free_address(parent), "::20")
+
+    def test_ipv6_short_prefix_subdivision_does_not_infer_ipv4(self):
+        parent = Subrede.objects.create(cliente=self.cliente, prefixo="::/0", status="C")
+        self.assertEqual(free_subnets(parent, 16, 2), ["::/16", "1::/16"])
+
+    def test_low_ipv6_address_suggestion_preserves_family_and_reservations(self):
+        subnet = Subrede.objects.create(cliente=self.cliente, prefixo="::/126")
+        EnderecoIP.objects.create(subrede=subnet, endereco="::", status="D")
+        EnderecoIP.objects.create(subrede=subnet, endereco="::1", status="R")
+        self.assertEqual(next_free_address(subnet), "::2")
+        cells = {cell["address"]: cell for cell in visual_map(subnet)}
+        self.assertEqual(cells["::"]["kind"], "disabled")
+        self.assertEqual(cells["::1"]["kind"], "reserved")
+        self.assertEqual(cells["::2"]["kind"], "free")
+
+    def test_host_prefixes_become_exhausted_after_assignment(self):
+        for prefix, address in [("192.0.2.1/32", "192.0.2.1"), ("::1/128", "::1")]:
+            with self.subTest(prefix=prefix):
+                subnet = Subrede.objects.create(cliente=self.cliente, prefixo=prefix)
+                self.assertEqual(next_free_address(subnet), address)
+                EnderecoIP.objects.create(subrede=subnet, endereco=address)
+                self.assertIsNone(next_free_address(subnet))
+
+    def test_allocation_with_insufficient_space_leaves_no_partial_data(self):
+        parent = Subrede.objects.create(cliente=self.cliente, prefixo="2001:db8::/126")
+        Subrede.objects.create(cliente=self.cliente, rede_pai=parent, prefixo="2001:db8::/127")
+        user = get_user_model().objects.create_user("noc-full")
+        with self.assertRaisesMessage(ValidationError, "apenas 1 bloco"):
+            allocate_subnets(
+                parent=parent, new_prefix=127, quantity=2, description="Sem espaço", user=user
+            )
+        self.assertEqual(parent.subredes_filhas.count(), 1)
+        self.assertEqual(self.cliente.historico_ipam.count(), 0)
+
+    def test_ipv6_free_space_is_isolated_by_customer_and_vrf(self):
+        parent = Subrede.objects.create(cliente=self.cliente, vrf=self.vrf, prefixo="2001:db8::/32")
+        Subrede.objects.create(cliente=self.other, prefixo="2001:db8::/48")
+        Subrede.objects.create(cliente=self.cliente, prefixo="2001:db8::/48")
+        self.assertEqual(free_subnets(parent, 48, 1), ["2001:db8::/48"])
+        self.assertEqual(next_free_address(parent), "2001:db8::")
+
     def test_next_free_address_skips_child_space(self):
         parent = Subrede.objects.create(cliente=self.cliente, prefixo="192.0.2.0/24", status="A")
         Subrede.objects.create(
@@ -253,6 +303,42 @@ class IPAMAccessTests(TestCase):
         self.client.force_login(user)
         response = self.client.get(reverse("ipam:dashboard"))
         self.assertEqual(response.status_code, 403)
+
+    def test_customer_cannot_use_operational_routes_even_with_crafted_posts(self):
+        user = get_user_model().objects.create_user("customer-readonly-ipam")
+        PerfilCliente.objects.create(usuario=user, cliente=self.cliente)
+        address = EnderecoIP.objects.create(subrede=self.subnet, endereco="203.0.113.1")
+        self.client.force_login(user)
+        routes = [
+            ("subnet_create", []),
+            ("subnet_detail", [self.subnet.pk]),
+            ("subnet_edit", [self.subnet.pk]),
+            ("subnet_split", [self.subnet.pk]),
+            ("address_create", [self.subnet.pk]),
+            ("address_edit", [self.subnet.pk, address.pk]),
+        ]
+        for name, args in routes:
+            url = reverse(f"ipam:{name}", args=args)
+            for method in ["get", "post"]:
+                with self.subTest(route=name, method=method):
+                    response = getattr(self.client, method)(url)
+                    self.assertEqual(response.status_code, 403)
+        self.assertEqual(Subrede.objects.count(), 2)
+        self.assertEqual(EnderecoIP.objects.count(), 1)
+        self.assertEqual(self.cliente.historico_ipam.count(), 0)
+
+    def test_ipv6_customer_detail_does_not_expose_foreign_routing_domain(self):
+        own = Subrede.objects.create(cliente=self.cliente, prefixo="2001:db8::/32")
+        foreign = Subrede.objects.create(cliente=self.other, prefixo="2001:db8::/32")
+        EnderecoIP.objects.create(subrede=foreign, endereco="2001:db8::1", hostname="segredo-noc")
+        user = get_user_model().objects.create_user("customer-ipv6")
+        PerfilCliente.objects.create(usuario=user, cliente=self.cliente)
+        self.client.force_login(user)
+        response = self.client.get(reverse("ipam:portal_detail", args=[own.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "segredo-noc")
+        response = self.client.get(reverse("ipam:portal_detail", args=[foreign.pk]))
+        self.assertEqual(response.status_code, 404)
 
     def test_customer_reads_only_own_subnet(self):
         user = get_user_model().objects.create_user("portal-ipam")

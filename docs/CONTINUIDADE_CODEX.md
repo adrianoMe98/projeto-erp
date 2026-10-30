@@ -101,6 +101,11 @@ HSTS habilitados. Não há novas migrations nesses ajustes.
 
 ## Próxima tarefa sugerida
 
+Uma primeira rodada local está registrada em `docs/HOMOLOGACAO_IPAM_1.3.md`: corrige
+a inferência indevida de IPv4 nas sugestões/subdivisões IPv6 próximas de `::` e amplia
+a cobertura para 65 testes Django, além dos 12 testes de manutenção. A homologação
+real no homelab e a verificação PostgreSQL permanecem separadas dessa evidência local.
+
 Confirmar o healthcheck da dev.3 em `http://IP-DO-HOMELAB:8021/health/` e homologar o IPAM:
 hierarquia e subdivisão IPv4/IPv6, VRFs, blocos livres, permissões e isolamento entre clientes.
 Registrar os ajustes encontrados em uma branch derivada de `development`, com testes

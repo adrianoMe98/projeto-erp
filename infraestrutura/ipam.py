@@ -57,6 +57,7 @@ def _occupied_network_intervals(
 
 def free_subnets(parent: Subrede, new_prefix: int, quantity: int) -> list[str]:
     parent_network = network_for(parent)
+    network_class = type(parent_network)
     max_prefix = parent_network.max_prefixlen
     if not parent_network.prefixlen < new_prefix <= max_prefix:
         raise ValidationError("O novo prefixo deve ser mais específico que a rede pai.")
@@ -77,7 +78,7 @@ def free_subnets(parent: Subrede, new_prefix: int, quantity: int) -> list[str]:
         parent, include_direct_addresses=True
     ):
         while cursor + block_size - 1 < occupied_start and len(results) < quantity:
-            results.append(str(ipaddress.ip_network((cursor, new_prefix))))
+            results.append(str(network_class((cursor, new_prefix))))
             cursor += block_size
         if len(results) >= quantity:
             return results
@@ -85,7 +86,7 @@ def free_subnets(parent: Subrede, new_prefix: int, quantity: int) -> list[str]:
             cursor = align(occupied_end + 1)
 
     while cursor + block_size - 1 <= parent_end and len(results) < quantity:
-        results.append(str(ipaddress.ip_network((cursor, new_prefix))))
+        results.append(str(network_class((cursor, new_prefix))))
         cursor += block_size
     return results
 
@@ -159,7 +160,7 @@ def next_free_address(subnet: Subrede) -> str | None:
                 cursor = occupied_end + 1
                 continue
         if cursor not in used:
-            return str(ipaddress.ip_address(cursor))
+            return str(type(network.network_address)(cursor))
         cursor += 1
     return None
 
