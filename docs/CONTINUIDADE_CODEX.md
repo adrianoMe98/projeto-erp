@@ -9,8 +9,9 @@ O desenvolvimento parte do pacote `projeto-erp-v1.3.0-dev.3.tar.gz`, SHA-256
 O pacote foi preparado fora do GitHub. Sua importação acumula todas as mudanças desde o
 commit original `34b48aa164eaf6fe814c164bc0c3c250c6db441f`, não apenas o IPAM.
 
-O código da aplicação e a versão são preservados. Esta importação acrescenta o `AGENTS.md`,
-este documento e os scripts de preparação e validação para o Codex.
+A versão é preservada. Esta importação acrescenta o `AGENTS.md`, este documento e os
+scripts de preparação e validação para o Codex. A primeira execução no PostgreSQL do
+GitHub Actions também identificou um ajuste no bloqueio transacional do IPAM, descrito abaixo.
 
 ## Ambientes e branches
 
@@ -85,6 +86,18 @@ lint, formatação, checks Django, ausência de migrations pendentes e sintaxe d
 O ambiente publicado na interface do Codex e o resultado do GitHub Actions devem ser
 conferidos separadamente. A construção da imagem, a recuperação real da senha e o
 comportamento das regras CGNAT nos equipamentos dependem do homelab.
+
+### Ajustes identificados na primeira pipeline
+
+O PostgreSQL não permite aplicar `FOR UPDATE` às relações opcionais trazidas por outer join.
+A alocação IPAM passa a bloquear somente a própria sub-rede pai com
+`select_for_update(of=("self",))`, mantendo a transação e o carregamento das relações.
+O teste existente de alocação atômica cobre esse caso quando executado em PostgreSQL.
+
+Na pipeline, `collectstatic` ocorre antes dos testes para disponibilizar o manifesto usado
+com `DEBUG=0`. Apenas a etapa dos testes funcionais HTTP desativa o redirecionamento para
+HTTPS. O check de segurança de produção continua com HTTPS obrigatório, cookies seguros e
+HSTS habilitados. Não há novas migrations nesses ajustes.
 
 ## Próxima tarefa sugerida
 

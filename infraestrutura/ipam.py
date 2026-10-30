@@ -95,7 +95,7 @@ def allocate_subnets(
     *, parent: Subrede, new_prefix: int, quantity: int, description: str, user
 ) -> list[Subrede]:
     parent = (
-        Subrede.objects.select_for_update()
+        Subrede.objects.select_for_update(of=("self",))
         .select_related("cliente", "secao", "vrf", "equipamento", "vlan")
         .get(pk=parent.pk)
     )
