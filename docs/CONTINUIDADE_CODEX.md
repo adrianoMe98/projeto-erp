@@ -2,6 +2,18 @@
 
 Registro de importação: 30/10/2026. Responsável pelo projeto: Adriano.
 
+## Reescrita iniciada em 11/11/2026
+
+Adriano solicitou reescrever o ERP usando Supabase. A primeira etapa está na branch
+`feat/supabase-base`, derivada de `development`, com uma aplicação Next.js/TypeScript
+em `web/` e migrations/políticas RLS em `supabase/`. Consulte `web/README.md` para
+setup, escopo e testes. O ponto inicial é autenticação, perfis e clientes; IPAM,
+helpdesk, contratos, financeiro e arquivos ainda dependem de novas etapas.
+
+O Django e suas migrations foram preservados. Não houve importação automática de dados,
+troca da aplicação no homelab, configuração de projeto hospedado ou publicação do ambiente.
+As instruções históricas abaixo continuam descrevendo o legado 1.3.
+
 ## Base importada
 
 O desenvolvimento parte do pacote `projeto-erp-v1.3.0-dev.3.tar.gz`, SHA-256

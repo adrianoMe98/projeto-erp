@@ -24,3 +24,16 @@ venv/
 # Arquivos do sistema operacional
 .DS_Store
 Thumbs.db
+
+# Reescrita Next.js / Supabase
+node_modules/
+.next/
+web/next-env.d.ts
+web/.env*
+!web/.env.example
+web/playwright-report/
+web/test-results/
+*.tsbuildinfo
+supabase/.temp/
+supabase/.branches/
+!supabase/**/*.sql

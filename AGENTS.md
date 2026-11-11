@@ -36,6 +36,15 @@ já distribuídas. Para UI, confira login, portal e Admin nos dois temas.
 
 ## Organização
 
+- A reescrita iniciada em 11/11/2026 usa `web/` (Next.js/TypeScript) e `supabase/`
+  (Auth, migrations e RLS). Consulte `web/README.md`. Use Node.js 22 ou superior,
+  `cd web && npm ci && npm run check`; valide o banco com `npm run test:db` e
+  os fluxos reais locais com `npm run test:integration`. Nunca use chaves privilegiadas
+  no frontend nem aplique migrations a um projeto Supabase existente sem definir o destino.
+- O Django permanece como legado durante a transição. Não remova seus dados nem suponha
+  que os módulos antigos já foram reescritos. A configuração/publicação do ambiente não
+  faz parte desta reescrita.
+
 - `core`: settings, URLs, healthcheck, metadados e arquivos estáticos.
 - `gestao`: clientes, contratos e financeiro.
 - `helpdesk`: chamados e apontamentos de horas.
